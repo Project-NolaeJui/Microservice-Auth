@@ -1,7 +1,8 @@
 package kan9hee.nolaejui_auth.controller
 
 import kan9hee.nolaejui_auth.dto.JwtTokenDTO
-import kan9hee.nolaejui_auth.dto.LoginDTO
+import kan9hee.nolaejui_auth.dto.LogOutDTO
+import kan9hee.nolaejui_auth.dto.UserCredentialsDTO
 import kan9hee.nolaejui_auth.service.AuthService
 import org.springframework.web.bind.annotation.*
 
@@ -9,18 +10,27 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/Auth")
 class AuthController(private val authService: AuthService) {
 
-    @GetMapping("/login")
-    fun login(@RequestBody loginDTO: LoginDTO): JwtTokenDTO {
-        return authService.logIn(loginDTO.insertedUserID,loginDTO.insertedPassword)
+    @PostMapping("/signUp")
+    fun signUp(@RequestBody userCredentialsDTO: UserCredentialsDTO): JwtTokenDTO {
+        return authService.logIn(userCredentialsDTO)
     }
 
-    @GetMapping("/logout")
-    fun logout(@RequestHeader("Authorization") accessToken: String?,
-               @RequestParam("refreshToken") refreshToken: String): JwtTokenDTO {
-        return authService.logout(accessToken,refreshToken)
+    @PostMapping("/signOut")
+    fun signOut(@RequestBody logOutDTO: LogOutDTO) {
+        authService.logOut(logOutDTO)
     }
 
-    @GetMapping("/reissueAccessToken")
+    @PostMapping("/logIn")
+    fun logIn(@RequestBody userCredentialsDTO: UserCredentialsDTO): JwtTokenDTO {
+        return authService.logIn(userCredentialsDTO)
+    }
+
+    @PostMapping("/logOut")
+    fun logOut(@RequestBody logOutDTO: LogOutDTO) {
+        authService.logOut(logOutDTO)
+    }
+
+    @PostMapping("/reissueAccessToken")
     fun reissueAccessToken(@RequestBody refreshTokenString:String): JwtTokenDTO {
         return authService.reissueAccessToken(refreshTokenString)
     }

@@ -7,9 +7,9 @@ import org.springframework.security.core.userdetails.UserDetails
 
 @Table(name = "user")
 @Entity
-class User(userID:String,
-           encryptedPassword:String,
-           systemLevel:String): UserDetails {
+class UserData(userID:String,
+               encryptedPassword:String,
+               systemLevel:String): UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -35,11 +35,12 @@ class JwtTokenComponent(@Value("\${jwt.secret}") secretKey:String) {
             .subject(authentication.name)
             .issuedAt(now)
             .claim("auth",authorities)
-            .expiration(Date(now.time+600000))
+            .expiration(Date(now.time+600_000))
             .signWith(this.key)
             .compact()
 
         val refreshToken = Jwts.builder()
+            .expiration(Date(now.time + 604_800_000))
             .signWith(this.key)
             .compact()
 
@@ -48,11 +49,7 @@ class JwtTokenComponent(@Value("\${jwt.secret}") secretKey:String) {
 
     fun validateToken(token:String): Boolean {
         return try {
-            val claims: Claims = Jwts.parser()
-                .verifyWith(this.key)
-                .build()
-                .parseSignedClaims(token)
-                .payload
+            val claims=getClaimsFromToken(token)
 
             val expirationDate = claims.expiration
             if (expirationDate.before(Date()))
@@ -62,5 +59,28 @@ class JwtTokenComponent(@Value("\${jwt.secret}") secretKey:String) {
         } catch (e: Exception) {
             false
         }
+    }
+
+    fun getUsernameFrom(accessToken:String): String? {
+        val claims=getClaimsFromToken(accessToken)
+
+        return claims.subject
+    }
+
+    private fun getClaimsFromToken(token:String): Claims {
+        val claims = try {
+            Jwts.parser()
+                .verifyWith(this.key)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+        } catch (e: Exception) {
+            throw RuntimeException("Invalid JWT token: ${e.message}", e)
+        }
+
+        if (claims == null) {
+            throw RuntimeException("Claims cannot be null for token: $token")
+        }
+        return claims
     }
 }

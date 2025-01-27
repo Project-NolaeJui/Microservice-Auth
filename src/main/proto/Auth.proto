@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message AccessToken{
+  string accessToken = 1;
+}
+
+message GrpcResult{
+  bool isSuccess = 1;
+  string resultMessage = 2;
+}
+
+service AuthServer{
+  rpc getUserName(AccessToken) returns (GrpcResult){}
+}

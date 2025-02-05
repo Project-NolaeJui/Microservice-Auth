@@ -7,12 +7,12 @@ import kan9hee.nolaejui_auth.service.AuthService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/Auth")
+@RequestMapping("/auth")
 class AuthController(private val authService: AuthService) {
 
     @PostMapping("/signUp")
-    fun signUp(@RequestBody userCredentialsDTO: UserCredentialsDTO): JwtTokenDTO {
-        return authService.logIn(userCredentialsDTO)
+    suspend fun signUp(@RequestBody userCredentialsDTO: UserCredentialsDTO): Boolean {
+        return authService.signUp(userCredentialsDTO)
     }
 
     @PostMapping("/signOut")
@@ -25,9 +25,14 @@ class AuthController(private val authService: AuthService) {
         return authService.logIn(userCredentialsDTO)
     }
 
+    @PostMapping("/logInByToken")
+    fun logInByToken(@RequestBody jwtTokenDTO: JwtTokenDTO): JwtTokenDTO {
+        return authService.logInByToken(jwtTokenDTO)
+    }
+
     @PostMapping("/logOut")
-    fun logOut(@RequestBody logOutDTO: LogOutDTO) {
-        authService.logOut(logOutDTO)
+    suspend fun logOut(@RequestBody logOutDTO: LogOutDTO) {
+        authService.signOut(logOutDTO)
     }
 
     @PostMapping("/reissueAccessToken")

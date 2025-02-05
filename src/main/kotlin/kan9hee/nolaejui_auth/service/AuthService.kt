@@ -23,6 +23,7 @@ import kotlin.jvm.Throws
 
 @Service
 class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
+                  private val externalService: ExternalService,
                   private val userRepository: UserRepository,
                   private val refreshTokenRepository: RefreshTokenRepository,
                   private val blacklistTokenRepository: BlacklistTokenRepository,
@@ -30,21 +31,35 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
                   private val jwtTokenComponent: JwtTokenComponent):UserDetailsService {
 
     @Transactional
-    fun signUp(userCredentialsDTO: UserCredentialsDTO) {
-        val encodedPassword = encodePassword(userCredentialsDTO.insertedPassword)
-        val newUser = UserData(
-            userCredentialsDTO.insertedUserID,
-            encodedPassword,
-            "User"
-        )
-        userRepository.save(newUser)
+    suspend fun signUp(userCredentialsDTO: UserCredentialsDTO): Boolean {
+        return try{
+            val encodedPassword = encodePassword(userCredentialsDTO.insertedPassword)
+            val newUser = UserData(
+                userCredentialsDTO.insertedUserID,
+                encodedPassword,
+                "User"
+            )
+
+            userRepository.save(newUser)
+            externalService.createAndDeletePlaylistForUser(userCredentialsDTO.insertedUserID,true)
+            true
+        } catch (e:Exception) {
+            false
+        }
     }
 
     @Transactional
-    fun signOut(logOutDTO: LogOutDTO) {
-        val refreshTokenInfo = validateUserCredentials(logOutDTO.refreshToken)
-        userRepository.deleteByUserID(refreshTokenInfo.userID)
-        logOut(logOutDTO)
+    suspend fun signOut(logOutDTO: LogOutDTO): Boolean {
+        return try{
+            val refreshTokenInfo = validateUserCredentials(logOutDTO.refreshToken)
+            logOut(logOutDTO)
+            val userName = logOutDTO.accessToken?.let { jwtTokenComponent.getUsernameFrom(it) }
+            userName?.let { externalService.createAndDeletePlaylistForUser(it,false) }
+            userRepository.deleteByUserID(refreshTokenInfo.userID)
+            true
+        } catch (e:Exception) {
+            false
+        }
     }
 
     @Transactional
@@ -67,6 +82,23 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
         )
 
         return jwtToken
+    }
+
+    @Transactional
+    fun logInByToken(jwtTokenDTO: JwtTokenDTO): JwtTokenDTO {
+        val isAccessTokenActive = jwtTokenComponent.validateToken(jwtTokenDTO.accessToken)
+
+        if(isAccessTokenActive) {
+            return jwtTokenDTO
+        }
+        else{
+            val isRefreshTokenActive = jwtTokenComponent.validateToken(jwtTokenDTO.refreshToken)
+            if(!isRefreshTokenActive)
+                throw IllegalArgumentException("유효하지 않은 토큰입니다.")
+
+            val newJwtTokenDTO = reissueAccessToken(jwtTokenDTO.refreshToken)
+            return newJwtTokenDTO
+        }
     }
 
     @Transactional

@@ -8,6 +8,6 @@ import org.springframework.data.redis.core.RedisHash
 @RedisHash(value = "blacklistToken", timeToLive = 86400)
 class BlacklistToken(
     @Id
-    val refreshTokenValue:String,
+    val tokenValue:String,
     val createdAt:Long=System.currentTimeMillis()
 )

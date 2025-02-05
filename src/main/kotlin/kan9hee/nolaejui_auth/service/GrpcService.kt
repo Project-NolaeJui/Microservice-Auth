@@ -4,9 +4,9 @@ import AuthServerGrpcKt
 import kan9hee.nolaejui_auth.component.JwtTokenComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.lognet.springboot.grpc.GRpcService
+import net.devh.boot.grpc.server.service.GrpcService
 
-@GRpcService
+@GrpcService
 class GrpcService(private val jwtTokenComponent: JwtTokenComponent)
     :AuthServerGrpcKt.AuthServerCoroutineImplBase() {
 

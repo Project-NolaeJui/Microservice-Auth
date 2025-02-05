@@ -46,7 +46,6 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-impl:0.12.6")
 	implementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
-	implementation("io.github.lognet:grpc-spring-boot-starter:5.1.5")
 	implementation("io.grpc:grpc-protobuf:1.68.2")
 	implementation("io.grpc:grpc-netty:1.68.2")
 	implementation("io.grpc:grpc-kotlin-stub:1.4.1")

@@ -2,6 +2,7 @@ package kan9hee.nolaejui_auth.controller
 
 import kan9hee.nolaejui_auth.dto.JwtTokenDTO
 import kan9hee.nolaejui_auth.dto.LogOutDTO
+import kan9hee.nolaejui_auth.dto.ReissueDTO
 import kan9hee.nolaejui_auth.dto.UserCredentialsDTO
 import kan9hee.nolaejui_auth.service.AuthService
 import org.springframework.web.bind.annotation.*
@@ -25,18 +26,13 @@ class AuthController(private val authService: AuthService) {
         return authService.logIn(userCredentialsDTO)
     }
 
-    @PostMapping("/logInByToken")
-    fun logInByToken(@RequestBody jwtTokenDTO: JwtTokenDTO): JwtTokenDTO {
-        return authService.logInByToken(jwtTokenDTO)
-    }
-
     @PostMapping("/logOut")
     suspend fun logOut(@RequestBody logOutDTO: LogOutDTO) {
         authService.signOut(logOutDTO)
     }
 
     @PostMapping("/reissueAccessToken")
-    fun reissueAccessToken(@RequestBody refreshTokenString:String): JwtTokenDTO {
-        return authService.reissueAccessToken(refreshTokenString)
+    fun reissueAccessToken(@RequestBody reissueDTO: ReissueDTO): JwtTokenDTO {
+        return authService.reissueAccessToken(reissueDTO.refreshToken)
     }
 }

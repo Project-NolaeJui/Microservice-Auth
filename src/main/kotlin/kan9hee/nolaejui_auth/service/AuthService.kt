@@ -13,8 +13,6 @@ import kan9hee.nolaejui_auth.entity.RefreshToken
 import kan9hee.nolaejui_auth.entity.UserData
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
-import org.springframework.security.core.userdetails.User
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
@@ -65,8 +63,9 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
     @Transactional
     fun logIn(userCredentialsDTO: UserCredentialsDTO): JwtTokenDTO {
         val user = loadUserByUsername(userCredentialsDTO.insertedUserID)
-        val encodedPassword = encodePassword(userCredentialsDTO.insertedPassword)
-        if (user.password != encodedPassword) {
+        val insertedPassword = userCredentialsDTO.insertedPassword.trim()
+
+        if (!passwordEncoderConfig.passwordEncoder().matches(insertedPassword,user.password)) {
             throw RuntimeException("Password mismatch")
         }
 
@@ -85,23 +84,6 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
     }
 
     @Transactional
-    fun logInByToken(jwtTokenDTO: JwtTokenDTO): JwtTokenDTO {
-        val isAccessTokenActive = jwtTokenComponent.validateToken(jwtTokenDTO.accessToken)
-
-        if(isAccessTokenActive) {
-            return jwtTokenDTO
-        }
-        else{
-            val isRefreshTokenActive = jwtTokenComponent.validateToken(jwtTokenDTO.refreshToken)
-            if(!isRefreshTokenActive)
-                throw IllegalArgumentException("유효하지 않은 토큰입니다.")
-
-            val newJwtTokenDTO = reissueAccessToken(jwtTokenDTO.refreshToken)
-            return newJwtTokenDTO
-        }
-    }
-
-    @Transactional
     fun logOut(logOutDTO: LogOutDTO) {
         logOutDTO.accessToken?.takeIf { jwtTokenComponent.validateToken(it) }?.let {
             blacklistTokenRepository.save(BlacklistToken(it))
@@ -113,6 +95,11 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
 
     @Transactional
     fun reissueAccessToken(refreshTokenString: String): JwtTokenDTO {
+        val isRefreshTokenActive = jwtTokenComponent.validateToken(refreshTokenString)
+        val isRefreshTokenBlacklisted = checkTokenBlacklisted(refreshTokenString)
+        if(!isRefreshTokenActive || isRefreshTokenBlacklisted)
+            throw IllegalArgumentException("유효하지 않은 토큰입니다.")
+
         val refreshTokenInfo = validateUserCredentials(refreshTokenString)
 
         val user = loadUserByUsername(refreshTokenInfo.userID)
@@ -130,10 +117,8 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
     }
 
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(userID: String): UserDetails {
-        return userRepository.findByUserID(userID)?.let {
-            User(it.username, it.password, it.authorities)
-        } ?: throw RuntimeException("User not found with ID: $userID")
+    override fun loadUserByUsername(userID: String): UserData {
+        return userRepository.findByUserID(userID)?: throw RuntimeException("User not found with ID: $userID")
     }
 
     private fun encodePassword(password: String): String {
@@ -143,5 +128,9 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
     private fun validateUserCredentials(refreshTokenString: String): RefreshToken {
         return refreshTokenRepository.findById(refreshTokenString)
             .orElseThrow { RuntimeException("Refresh token not found") }
+    }
+
+    private fun checkTokenBlacklisted(tokenString:String): Boolean {
+        return blacklistTokenRepository.existsById(tokenString)
     }
 }

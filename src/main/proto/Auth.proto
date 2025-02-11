@@ -4,9 +4,13 @@ message AccessToken{
   string accessToken = 1;
 }
 
-message UserCD{
+message UserName{
   string userName = 1;
-  bool isCreate = 2;
+}
+
+message AdminAccount{
+  string adminId = 1;
+  string adminPassword = 2;
 }
 
 message GrpcResult{
@@ -16,9 +20,12 @@ message GrpcResult{
 
 service AuthServer{
   rpc getUserName(AccessToken) returns (GrpcResult){}
+  rpc createAdminAccount(AdminAccount) returns (GrpcResult){}
+  rpc deleteUser(UserName) returns (GrpcResult){}
 }
 
 //other server
 service MusicListServer {
-  rpc createAndDeletePlaylistForUser(UserCD) returns (GrpcResult){}
+  rpc createDefaultPickupPlaylist(UserName) returns (GrpcResult){}
+  rpc deleteUsersAllPlaylist(UserName) returns (GrpcResult){}
 }

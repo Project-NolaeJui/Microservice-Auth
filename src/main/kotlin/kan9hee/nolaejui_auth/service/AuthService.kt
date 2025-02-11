@@ -35,11 +35,11 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
             val newUser = UserData(
                 userCredentialsDTO.insertedUserID,
                 encodedPassword,
-                "User"
+                "USER"
             )
 
             userRepository.save(newUser)
-            externalService.createAndDeletePlaylistForUser(userCredentialsDTO.insertedUserID,true)
+            externalService.createDefaultPickupPlaylist(userCredentialsDTO.insertedUserID)
             true
         } catch (e:Exception) {
             false
@@ -52,12 +52,33 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
             val refreshTokenInfo = validateUserCredentials(logOutDTO.refreshToken)
             logOut(logOutDTO)
             val userName = logOutDTO.accessToken?.let { jwtTokenComponent.getUsernameFrom(it) }
-            userName?.let { externalService.createAndDeletePlaylistForUser(it,false) }
+            userName?.let { externalService.deleteUsersAllPlaylist(it) }
             userRepository.deleteByUserID(refreshTokenInfo.userID)
             true
         } catch (e:Exception) {
             false
         }
+    }
+
+    @Transactional
+    fun signUpAdminAccount(adminId:String,adminPassword:String) {
+        val encodedPassword = encodePassword(adminPassword)
+        val newUser = UserData(
+            adminId,
+            encodedPassword,
+            "ADMIN"
+        )
+
+        userRepository.save(newUser)
+    }
+
+    @Transactional
+    suspend fun signOutByAdmin(userName: String) {
+        val refreshTokenList = refreshTokenRepository.findByUserID(userName)
+        refreshTokenList.map{
+            blacklistTokenRepository.save(BlacklistToken(it.refreshTokenValue))
+        }
+        userRepository.deleteByUserID(userName)
     }
 
     @Transactional

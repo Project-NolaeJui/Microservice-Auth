@@ -15,10 +15,7 @@ class CsrfConfig {
         http
             .csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers(
-                    "/auth/signUp",
-                    "/auth/logIn",
-                    "/auth/reissueAccessToken").permitAll()
+                it.requestMatchers("/auth/**").permitAll()
                 it.anyRequest().authenticated()
             }
             .formLogin { it.disable() }

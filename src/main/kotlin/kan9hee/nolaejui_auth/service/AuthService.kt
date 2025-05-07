@@ -91,8 +91,9 @@ class AuthService(private val passwordEncoderConfig: PasswordEncoderConfig,
         }
 
         val authenticationToken = UsernamePasswordAuthenticationToken(
-            userCredentialsDTO.insertedUserID,
-            userCredentialsDTO.insertedPassword
+            user.username,
+            user.password,
+            user.authorities
         )
         val authentication = authenticationManagerBuilder.`object`.authenticate(authenticationToken)
 

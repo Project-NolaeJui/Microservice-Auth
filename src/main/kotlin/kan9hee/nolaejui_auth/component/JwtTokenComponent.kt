@@ -50,11 +50,9 @@ class JwtTokenComponent(@Value("\${jwt.secret}") secretKey:String) {
     fun validateToken(token:String): Boolean {
         return try {
             val claims=getClaimsFromToken(token)
-
             val expirationDate = claims.expiration
             if (expirationDate.before(Date()))
                 return false
-
             true
         } catch (e: Exception) {
             false
@@ -63,7 +61,6 @@ class JwtTokenComponent(@Value("\${jwt.secret}") secretKey:String) {
 
     fun getUsernameFrom(accessToken:String): String? {
         val claims=getClaimsFromToken(accessToken)
-
         return claims.subject
     }
 
